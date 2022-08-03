@@ -1,0 +1,185 @@
+#librerie in uso
+#install.packages("Rtools")
+#install.packages("devtools")
+#install_github("alessandromagrini/caretAddOn")
+#install.packages("caret")
+#install.packages("caretAddOn")
+#install.packages("vctrs")
+#install.packages("tibble")
+#install.packages("remotes")
+
+library(readr)
+library(dplyr)
+library(corrplot)
+library(MASS)
+library(corrr)
+library(tidyverse)
+library(devtools)
+library(caret)          ## pacchetto per la validazione incrociata
+library(caretAddOn)     ## funzioni aggiuntive per il pacchetto 'caret'
+library(vctrs)
+library(remotes)
+
+setwd('C:/Users/dario.saturni/OneDrive - S3K S.p.A/Desktop/MABIDA/Magrini/new')
+wine <- read_delim("wine.csv", delim = ";", 
+                   escape_double = FALSE, trim_ws = TRUE)
+View(wine)
+#trasformo la variabile type in binary
+wine$type = ifelse(wine$type=="red",1,0)
+head(wine)
+names(wine)
+summary(wine)
+summary(wine$quality)
+?hist
+hist(wine$quality, xlab = "Quality", ylab='Frequenza', main= "Istogramma var. quality")
+cor(wine)
+
+#tolgo type perché voglio indagare indipendentemente
+#dal tipo di vino
+wine_notype = subset(wine, select=c('quality','fixed acidity', 'volatile acidity', 'citric acid', 'residual sugar', 'chlorides', 'free sulfur dioxide', 'total sulfur dioxide', 'density', 'pH', 'sulphates', 'alcohol'))
+summary(wine_notype)
+pairs(wine_notype, pch = 10)
+corrplot(cor(wine_notype), method = "number", order = "hclust") 
+
+#volevo vedere un paio di variabili
+plot(wine_notype$'volatile acidity', ylab="volatile acidity")
+plot(wine_notype$'chlorides', ylab="chlorides")
+hist(wine_notype$'density', ylab="density")
+plot(wine_notype$'alcohol', ylab="alcohol")
+
+#10 fold, il set di dati si divide in un numero K (10 in questo caso). 
+#Divido il set di dati nel punto in cui il set di test utilizza ogni piega. 
+#Divider? il set di dati in dieci pieghe. 
+#Il modello utilizza la prima piega nella prima iterazione per testare il modello. 
+#Utilizza i restanti set di dati per addestrare il modello. 
+#La seconda piega aiuta a testare il set di dati e l'altra supporta il processo di formazione. 
+#Lo stesso processo si ripete fino a quando il set di test utilizza ogni piega delle dieci pieghe.
+
+DAT = wine_notype
+names(DAT)
+#tolgo gli spazi dai nomi delle variabili
+names(DAT)[names(DAT) == "volatile acidity"] <- "volatile_acidity"
+names(DAT)[names(DAT) == "fixed acidity"] <- "fixed_acidity"
+names(DAT)[names(DAT) == "free sulfur dioxide"] <- "free_sulfur_dioxide"
+names(DAT)[names(DAT) == "total sulfur dioxide"] <- "total_sulfur_dioxide"
+names(DAT)[names(DAT) == "residual sugar"] <- "residual_sugar"
+names(DAT)[names(DAT) == "citric acid"] <- "citric_acid"
+
+#variabile di risposta
+nomeY <- "quality"
+#variabili dipendenti
+nomiX <- setdiff(colnames(DAT),"quality")
+
+## controlli della validazione incrociata
+#   - 'number' : numero di fold
+#   - 'repeats': numero di ripetizioni
+
+
+?trainControl()
+ctrl <- trainControl(method="repeatedcv", number=10, repeats=1, #vedi se aumentare
+                     summaryFunction=customSummaryReg,
+                     savePredictions="final")
+
+n <- nrow(DAT)
+p <- length(nomiX)
+form <- formula(paste0(nomeY,"~",paste0(nomiX, collapse="+")))
+seed <- 99         ## seed per riproducibilita'
+RESULTS <- list()  ## lista dove inserisco i risultati
+
+###  reg. Y non trasformata  ###
+
+bestTune <- function(caret_fit) {
+  best <- which(rownames(caret_fit$results)==rownames(caret_fit$bestTune))
+  caret_fit$results[best,]
+}
+
+
+set.seed(seed)
+RESULTS$lm <- train(form, data=DAT, method="lm", trControl=ctrl)
+bestTune(RESULTS$lm)
+
+# sommario stima su intero campione 
+summary(RESULTS$lm$finalModel)
+
+plot(resid((RESULTS$lm)), ylab= 'Residual', xlab ='')
+
+
+###  reg. Y trasformata al log (prev. in media)  ###
+
+set.seed(seed)
+RESULTS$loglm_mn <- train(form, data=DAT, method=loglm_mean,
+                          trControl=ctrl)
+bestTune(RESULTS$loglm_mn)
+
+# sommario stima su intero campione 
+summary(RESULTS$loglm_mn$finalModel)
+
+
+###  reg. Y trasformata al log (prev. in mediana)  ###
+
+set.seed(seed)
+RESULTS$loglm_md <- train(form, data=DAT, method=loglm_median,
+                          trControl=ctrl)
+bestTune(RESULTS$loglm_md)
+
+# sommario stima su intero campione
+summary(RESULTS$loglm_md$finalModel)
+
+###  algoritmo k-nn  ###
+
+set.seed(seed)
+# questa implementazione applica la standardizzazione alle
+#   VE quantitative e la codifica dummy alle VE qualitative,
+#   e utilizza la distanza euclidea
+# il dataset ha 6848 osservazioni, imposto k = sqrt(n)
+library(tidymodels)
+library(plotly)
+RESULTS$knn <- train(form, data=DAT, method="knn",
+                     preProcess=c("center","scale"), trControl=ctrl,
+                     #tuneGrid=expand.grid(k=round(sqrt(n)))
+                     tuneGrid=expand.grid(k=round(sqrt(6849)))
+)
+bestTune(RESULTS$knn)
+trainPlot(RESULTS$knn)
+summary(RESULTS$knn$finalModel)
+
+
+###  albero  ###
+
+set.seed(seed)
+# controlli dell'albero:
+#  - 'minsplit' : numero minimo di unita' per effettuare split (default: 20)
+#  - 'minbucket': numero minimo di unita' nei nodi foglia (default: 7)
+#  - 'cp': parametro di complessita'
+RESULTS$tree <- train(form, data=DAT, method="rpart",
+                      control=list(minsplit=10,minbucket=5),
+                      trControl=ctrl,
+                      tuneGrid=expand.grid(cp=seq(0.001,0.3,length=20))
+)
+bestTune(RESULTS$tree)
+trainPlot(RESULTS$tree)
+
+# grafico dell'albero sull'intero campione
+library(rpart.plot)
+#pdf(file.path(mainDir,"tree.pdf")) ##
+rpart.plot(RESULTS$tree$finalModel, type=4, extra=101)
+#dev.off() ##
+
+###  foresta casuale  ###
+
+set.seed(seed)
+# controlli della foresta:
+#  - 'ntree' : numero di alberi paralleli (default: 500)
+#  - 'nodesize': numero minimo di unita' nei nodi foglia (default: 5)
+#  - 'mtry': numero di variabili considerate casualmente ad ogni split
+RESULTS$forest <- train(form, data=DAT, method="rf",
+                        ntree=500, nodesize=5, trControl=ctrl,
+                        tuneGrid=expand.grid(mtry=round(p/3))
+                        #tuneGrid=expand.grid(mtry=round(sqrt(6848)))
+)
+bestTune(RESULTS$forest)
+trainPlot(RESULTS$forest)
+summary(RESULTS$forest$finalModel)
+summary(RESULTS$forest$finalModel$mse)
+hist(RESULTS$forest$finalModel$predicted, col="blue", main =   'Risultati modello', xlab = 'quality prevista')
+hist(RESULTS$forest$finalModel$y, col='red', xlab = 'quality', main =   'Variabile predittiva')
