@@ -1,0 +1,94 @@
+library(readr)
+library(ISLR)
+library(dplyr)
+
+setwd('C:/Users/dario.saturni/OneDrive - S3K S.p.A/Desktop/MABIDA/Elba')
+auto <- read_delim("Auto.csv", delim = ",", 
+                      escape_double = FALSE, trim_ws = TRUE)
+
+#tolgo gli NA
+names(auto)
+view(auto)
+unique(auto$horsepower)
+auto$horsepower = ifelse(auto$horsepower=="?",NA,auto$horsepower)
+?na.omit()
+auto2 = na.omit(auto)
+auto=auto2
+
+#controllo le variabili per fare il subset del dataset
+names(auto)
+head(auto)
+unique(auto$mpg)
+unique(auto$cylinders) #da togliere
+unique(auto$displacement)
+unique(auto$horsepower)
+unique(auto$weight)
+unique(auto$acceleration)
+unique(auto$year) #da togliere
+unique(auto$origin) #da togliere
+unique(auto$name) #da togliere
+
+#cambio horsepower in numero, era rimasto char
+auto$horsepower= as.numeric(auto$horsepower)
+
+#subset delle variabili scelte per effettuare l'ACP
+auto2 = subset(auto, select = setdiff(colnames(auto),c("year","origin","name","cylinders")))
+summary(auto2)
+
+#############################################################################################
+#############################################################################################
+
+## In ambiente R abbiamo 2 funzioni per implementare la PCA: prcomp e princomp
+
+#il dataset ha + di 100 osservazioni, le differenze sono ininfluenti tra i due metodi
+#ricorrerò alla funzione prcomp
+
+#if(!require(devtools)) install.packages("devtools")
+#devtools::install_github("kassambara/factoextra")
+library(factoextra)
+ds = auto2
+names(ds)
+res.pca <- prcomp(ds, scale = TRUE) #utile scalare dato che le misurazioni sono eterogenee (distanze e tempi)
+summary(res.pca)
+
+sum(res.pca$sdev^2) # quando le variabili sono normalizzate ciascuna variabile
+#ha varianza 1, e la somma è uguale a p (numero variabili), per questo il calcolo è uguale a 5
+#dividendo ciascuna riga per sdev^2 troviamo la proportion of variance già espressa nel sommario
+
+#per ottenere le CP a partire dalle variabili
+res.pca$rotation
+
+
+# per es. se voglio il valore della prima PC devo:
+CP1 = scale(as.matrix(ds))%*%(res.pca$rotation[,1]) # prodotto matriciale per ottenere il valore della PC1
+CP1[1]
+
+#gomito
+fviz_screeplot(res.pca, addlabels = TRUE, ylim = c(0, 40)) #funzione del pacchetto factoextra.
+#si considerano 3CP
+
+#get_pca_var Extract all the results (coordinates, squared cosine, contributions) for 
+#the active individuals/variables from Principal Component Analysis (PCA) outputs.
+var <- get_pca_var(res.pca)
+var
+
+var$cor #rappresenta la correlazione lineare tra le variabili
+
+#pca_biplot
+fviz_pca_biplot(res.pca, repel = TRUE)
+#inutile in questo caso, troppo confusionario
+
+#contributi alle variabili
+var$contrib 
+# Divisi per PC
+
+#PC1
+fviz_contrib(res.pca, choice = "var", axes = 1, top = 5)
+#PC2
+fviz_contrib(res.pca, choice = "var", axes = 2, top = 10)
+#PC3
+fviz_contrib(res.pca, choice = "var", axes = 3, top = 10)
+#PC4
+fviz_contrib(res.pca, choice = "var", axes = 4, top = 10)
+#PC5
+fviz_contrib(res.pca, choice = "var", axes = 5, top = 10)
