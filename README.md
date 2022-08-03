@@ -2,7 +2,7 @@
 
 Exercise on ML for the University Master I'm attending, I've decided to "make it public" so everybody could laugh at my noob's cheeks.
 
-Branch Hierarchies
+# Branch Roadmap
 
 Wine Quality: various algorithms I've used to make inference about wine quality, based on organoleptic and chemical features; Dataset is from Kaggle, courtesy by P. Cortez, A. Cerdeira, F. Almeida, T. Matos and J. Reis;
 
