@@ -1,7 +1,12 @@
 # ML-EX
 
-Exercise on ML for the University Master I'm attending, I've decided to "make it public" so everybody could laugh at my noob's cheeks.
+The objective of this analysis is to correctly predict wine quality from its characteristics. Variables in use were about chemical attributes of the finite product (chlorides, alcohol etc.). Quality it's expressed in a scale from 1 to 10. All the other features were in different scale. Decided to go with a 10 fold approach. For academic purpose, it wasn't necessary to do more than 1 repeats. I've runned and compared various alghoritm to do the job:
+-	Linear Regression (not transformed, prev. in mean);
+-	Log Log Regression (because all the features are strictly positive I've decided to give it a shot);
+-	KNN;
+-	Decision Threes;
+-	Random forest Threes;
 
-Branch Hierarchies:
-- 01. Wine Quality: various algorithms I've used to make inference about wine quality, based on organoleptic and chemical features; Dataset is from Kaggle, courtesy by P. Cortez, A. Cerdeira, F. Almeida, T. Matos and J. Reis;
-- 02. Auto ACP: some code I've wrote to perform ACP onto Auto dataset; Dataset is from library ISLR, courtesy by James, G., Witten, D., Hastie, T., and Tibshirani;
+It turns out random forest threes it's the best of the bunch, because there isn't a linear correlation between data so a more ductile model than linear regression is needed to make prevision. RFT gives less performance errors than the other two models.
+
+All the code is written in R Studio Cloud, R Version 4.1.3.
