@@ -1,11 +1,5 @@
 # ML-EX
 
-Exercise on ML for the University Master I'm attending, I've decided to "make it public" so everybody could laugh at my noob's cheeks.
+The objective of this analysis is to create a model that correctly predict if a message is Spam or not. The analysis is based on spam.csv dataset, it contains a bunch of measurements used to identify if a message is spam or not and an historic series. You can reference the file spam_doc.docx for documentation about the dataset variables. I think linear regression could make a great work, from documentation we can evaluate there is a linear relationship between response variable and predictors. 
 
-# Branch Roadmap
-
-**Wine Quality**
-various algorithms I've used to make inference about wine quality, based on organoleptic and chemical features; Dataset is from Kaggle, courtesy by P. Cortez, A. Cerdeira, F. Almeida, T. Matos and J. Reis;
-
-**Auto ACP**
-some code I've wrote to perform ACP onto Auto dataset; Dataset is from library ISLR, courtesy by James, G., Witten, D., Hastie, T., and Tibshirani;
+All the code is written in Python 3.X, in a Collab Notebook, using Tensorflow. Dataset courtesy by Mark Hopkins, Erik Reeber, George Forman, George Forman.
