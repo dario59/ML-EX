@@ -12,3 +12,6 @@ Code in R 4.1.3. Various algorithms I've used to make inference about wine quali
 
 **Auto ACP**
 Code in R 4.1.3. Some code I've wrote to perform ACP onto Auto dataset; Dataset is from library ISLR, courtesy by James, G., Witten, D., Hastie, T., and Tibshirani;
+
+**Hidden Markov Model for weather**
+Code in Python 3.X. Hidden Markov Model used to create prevision on the weather of my city based on a sensor's data; Data are open data courtesy of ISR of Regione Toscana;
