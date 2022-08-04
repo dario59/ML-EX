@@ -9,4 +9,4 @@ The objective of this analysis is to correctly predict wine quality from its cha
 
 It turns out random forest threes it's the best of the bunch, because there isn't a linear correlation between data so a more ductile model than linear regression is needed to make prevision. RFT gives less performance errors than the other two models.
 
-All the code is written in R Studio Cloud, R Version 4.1.3.
+All the code is written in R Studio, R Version 4.1.3.
